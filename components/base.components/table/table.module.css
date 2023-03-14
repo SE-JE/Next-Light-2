@@ -1,0 +1,7 @@
+.table__action {
+    opacity: 0;
+}
+
+.table__row:hover .table__action {
+    opacity: 1;
+}
