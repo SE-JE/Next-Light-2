@@ -197,8 +197,8 @@ inputImageProps) {
               aspectRatio: aspect || '1/1',
             }}
             className={`
-              bg-base text-slate-400 w-full border relative flex flex-col gap-y-5 justify-center items-center m-auto rounded-md bg-cover bg-no-repeat
-              ${dragActive ? 'border-primary' : 'border-slate-300'}   
+              bg-background text-slate-400 w-full border-[1px] shadow-inner relative flex flex-col gap-y-5 justify-center items-center m-auto rounded-lg bg-cover bg-no-repeat
+              ${dragActive ? 'border-primary' : 'border-emerald-100'}   
               ${!disabled && 'cursor-pointer '} 
               ${isInvalid && 'outline__danger'}
             `}
@@ -210,10 +210,10 @@ inputImageProps) {
               ) : (
                 <>
                   <FontAwesomeIcon
-                    className="text-3xl"
+                    className="text-2xl"
                     icon={dragActive ? faHandHolding : faCamera}
                   />
-                  <p className="font-semibold">
+                  <p className="text-sm">
                     {dragActive ? 'Letakkan disini' : 'Pilih gambar'}
                   </p>
                 </>
@@ -232,6 +232,7 @@ inputImageProps) {
             onChange={upload}
             className="hidden"
             disabled={disabled}
+            accept="image/*"
           />
 
           {dragActive && (

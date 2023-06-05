@@ -6,3 +6,7 @@ export * from './headbar';
 export * from './breadcumb';
 export * from './table';
 export * from './supervision';
+export * from './format';
+export * from './scanner';
+export * from './card';
+export * from './chart';

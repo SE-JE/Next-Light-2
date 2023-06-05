@@ -12,6 +12,7 @@ export function FloatingPageComponent({
   size,
   children,
   tip,
+  className,
 }: floatingPageProps) {
   useEffect(() => {
     if (show) {
@@ -25,18 +26,19 @@ export function FloatingPageComponent({
     <>
       <div
         className={` 
-            ${styles.modal__background}
-            ${show ? 'opacity-30' : 'scale-0 opacity-0'}
-          `}
+        ${styles.modal__background}
+        ${show ? 'opacity-30' : 'scale-0 opacity-0'}
+        `}
         onClick={() => onClose()}
       ></div>
 
       <div
         className={`
-          fixed top-0 
+          fixed top-0 bg-white
           ${styles.floating__page}
           ${floatingPageContainer[size || 'md']}
           ${floatingPage[show ? 'show' : 'close']}
+          ${className}
         `}
       >
         <div
@@ -57,7 +59,9 @@ export function FloatingPageComponent({
           />
         </div>
 
-        {children}
+        <div className="max-h-[calc(100vh-60px)] overflow-y-auto scroll_control h-full">
+          {show && children}
+        </div>
       </div>
     </>
   );

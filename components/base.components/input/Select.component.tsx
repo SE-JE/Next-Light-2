@@ -12,13 +12,14 @@ import {
   inputTip,
 } from './input.decorate';
 import styles from './input.module.css';
-import { useValidationHelper } from '../../../helpers';
+import { get, useLazySearch, useValidationHelper } from '../../../helpers';
 import { selectOptionProps, selectProps } from './props/select.props';
 import {
   faCheckCircle,
   faChevronDown,
   faTimes,
 } from '@fortawesome/free-solid-svg-icons';
+import { standIn } from '../../../helpers/standIn.helpers';
 
 export function SelectComponent({
   name,
@@ -38,6 +39,9 @@ export function SelectComponent({
   searchable,
   multiple,
   register,
+  searchServer,
+  serverOptionControl,
+  autoFocus,
 }: selectProps) {
   const [inputShowValue, setInputShowValue] = useState('');
   const [inputValue, setInputValue] = useState<
@@ -47,6 +51,7 @@ export function SelectComponent({
   const [isInvalid, setIsInvalid] = useState('');
   const [isFirst, setIsFirst] = useState(true);
   const [keydown, setKeydown] = useState(false);
+  const [loadingOption, setLoadingOption] = useState(false);
 
   const [dataOptions, setDataOptions] = useState<selectOptionProps[]>([]);
   const [filteredOptions, setFilteredOptions] = useState<selectOptionProps[]>(
@@ -54,6 +59,97 @@ export function SelectComponent({
   );
   const [activeOption, setActiveOption] = useState(0);
   const [showOption, setShowOption] = useState(false);
+
+  const [search, setSearch] = useState('');
+  const [keyword, setKeyword] = useState('');
+  const [keywordSearch] = useLazySearch(keyword);
+
+  // if (serverOptionControl?.path || serverOptionControl?.url) {
+  //   // eslint-disable-next-line react-hooks/rules-of-hooks
+  //   const [loading, code, data] = useGet(serverOptionControl);
+
+  //   console.log(data);
+  // }
+
+  useEffect(() => {
+    const fetchOptions = async () => {
+      setLoadingOption(true);
+      const cacheData = await standIn.get(
+        serverOptionControl?.cacheName || `option_${serverOptionControl?.path}`
+      );
+
+      if (cacheData) {
+        setDataOptions(cacheData);
+        setLoadingOption(false);
+      } else {
+        const mutateOptions = await get(serverOptionControl || {});
+        setDataOptions(mutateOptions?.data);
+        standIn.set({
+          key:
+            serverOptionControl?.cacheName ||
+            `option_${serverOptionControl?.path}`,
+          data: mutateOptions?.data,
+          expired: 5,
+        });
+        setLoadingOption(false);
+      }
+    };
+
+    if (!searchServer) {
+      if (serverOptionControl?.path || serverOptionControl?.url) {
+        fetchOptions();
+      } else {
+        !options && setDataOptions([]);
+      }
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serverOptionControl?.path, serverOptionControl?.url]);
+
+  // =========================>
+  // ## BETA server search
+  // =========================>
+  useEffect(() => {
+    const fetchOptions = async () => {
+      let serverControl = {
+        ...serverOptionControl,
+        params: {
+          search: search,
+        },
+      };
+      setLoadingOption(true);
+      const mutateOptions = await get(serverControl || {});
+      if (mutateOptions.status == '200') {
+        setIsInvalid('');
+      }
+      let newOptions = mutateOptions?.data?.data.map((item: any) => {
+        return { value: item.id, label: item.name };
+      });
+      if (newOptions.length > 0) {
+        setDataOptions(newOptions);
+      }
+
+      setLoadingOption(false);
+    };
+    if (searchServer) {
+      if (serverOptionControl?.path || serverOptionControl?.url) {
+        fetchOptions();
+      } else {
+        !options && setDataOptions([]);
+      }
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, serverOptionControl?.path, serverOptionControl?.url]);
+  useEffect(() => {
+    if (keywordSearch) {
+      setSearch?.(keywordSearch);
+    } else {
+      setSearch?.('');
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keywordSearch]);
 
   useEffect(() => {
     register?.(name, validations);
@@ -81,9 +177,12 @@ export function SelectComponent({
     if (value) {
       setInputValue(value);
       setInputShowValue(
-        dataOptions.find((option) => option.value == inputValue)?.label || ''
+        dataOptions?.find((option) => option.value == value)?.label || ''
       );
       setIsFirst(false);
+    } else {
+      setInputValue('');
+      setInputShowValue('');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, dataOptions]);
@@ -191,7 +290,6 @@ export function SelectComponent({
             {label}
           </label>
         )}
-
         {tip && (
           <small
             className={`
@@ -230,7 +328,7 @@ export function SelectComponent({
                 : ''
             }
             id={`select_${name}`}
-            disabled={disabled}
+            disabled={loadingOption || !dataOptions?.length || disabled}
             value={inputShowValue}
             onFocus={(e) => {
               setIsFocus(true);
@@ -240,7 +338,7 @@ export function SelectComponent({
             }}
             onBlur={(e) => {
               const value = e.target.value;
-              const valueOption = dataOptions.find(
+              const valueOption = dataOptions?.find(
                 (option) => option.label?.toLowerCase() == value?.toLowerCase()
               );
 
@@ -250,14 +348,16 @@ export function SelectComponent({
                     if (valueOption?.value) {
                       setInputShowValue(valueOption.label);
                       setInputValue(valueOption.value);
-                      onChange?.(valueOption.value);
+                      onChange?.(valueOption.value, valueOption);
                     } else {
                       setInputShowValue('');
                       setInputValue('');
+                      onChange?.('');
                     }
                   }, 140);
                 } else {
                   setInputShowValue('');
+                  onChange?.('');
                 }
               }
 
@@ -268,16 +368,17 @@ export function SelectComponent({
             }}
             onChange={(e) => {
               searchable && setInputShowValue(e.target.value);
+              searchServer && setKeyword(e.target.value);
               setIsFirst(false);
               !errorMessage && setIsInvalid('');
-              onChange?.(e.target.value);
+              // onChange?.(e.target.value);
               dataOptions?.length && filterOption(e);
             }}
             onKeyDown={(e) => {
               dataOptions?.length && onKeyDownOption(e);
             }}
             autoComplete="off"
-            autoFocus
+            autoFocus={autoFocus}
           />
 
           {(!searchable || (searchable && !isFocus)) && (
@@ -305,13 +406,15 @@ export function SelectComponent({
                         <div
                           key={key}
                           className={`
+                          ${size == 'sm' ? 'text-xs' : 'text-sm'}
                           ${styles.input_values_item}
                         `}
                         >
                           <span className="">
                             {
-                              options.find((option) => option.value == item)
-                                ?.label
+                              dataOptions?.find(
+                                (option) => option.value == item
+                              )?.label
                             }
                           </span>
                           <FontAwesomeIcon
@@ -327,6 +430,12 @@ export function SelectComponent({
                               setInputValue(
                                 values.filter((_, val) => val != index)
                               );
+                              if (
+                                !values.filter((_, val) => val != index)?.length
+                              ) {
+                                setInputShowValue('');
+                                onChange?.('');
+                              }
                             }}
                           />
                         </div>
@@ -382,6 +491,7 @@ export function SelectComponent({
           <div>
             <ul
               className={`
+                  scroll_control
                   ${inputSuggestContainer[size || 'md']} 
                   ${isFocus ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0'}
                   ${styles.input__suggest__container}
@@ -421,7 +531,7 @@ export function SelectComponent({
                       if (!multiple) {
                         setInputShowValue(option.label);
                         setInputValue(option.value);
-                        onChange?.(option.value);
+                        onChange?.(option.value, option);
                       } else {
                         const values: string[] | number[] = Array.isArray(
                           inputValue
@@ -438,14 +548,14 @@ export function SelectComponent({
                             .find((val) => val == option.value)
                         ) {
                           setInputValue(values);
+                          onChange?.(values);
                         } else {
                           setInputValue([
                             ...Array().concat(values),
                             option.value,
                           ]);
+                          onChange?.([...Array().concat(values), option.value]);
                         }
-
-                        onChange?.(values);
                       }
                       setTimeout(() => setIsFocus(false), 120);
                     }}
@@ -463,7 +573,6 @@ export function SelectComponent({
             </ul>
           </div>
         )}
-
         {isInvalid && (
           <small
             className={`

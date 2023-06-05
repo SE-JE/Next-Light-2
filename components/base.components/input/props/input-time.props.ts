@@ -18,4 +18,5 @@ export type inputTimeProps = {
   max?: string;
   withSecond?: boolean;
   register?: (name: string, validations?: validationRules) => void;
+  autoFocus?: boolean;
 };

@@ -1,4 +1,5 @@
 .button {
+    @apply whitespace-nowrap;
 	transform: scale(1);
 	filter: brightness(0.95);
 }

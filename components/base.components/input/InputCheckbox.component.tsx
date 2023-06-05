@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { get } from '../../../helpers';
 import { CheckboxComponent } from './Checkbox.component';
 import { inputContainer, inputField, inputLabel } from './input.decorate';
 import styles from './input.module.css';
@@ -15,8 +16,33 @@ export function InputCheckboxComponent({
   onChange,
   register,
   validations,
+  serverOptionControl,
+  customOptions,
 }: inputCheckboxProps) {
   const [inputValue, setInputValue] = useState<string[] | number[]>([]);
+  const [dataOptions, setDataOptions] = useState<inputCheckboxProps[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchOptions = async () => {
+      setLoading(true);
+      const mutateOptions = await get(serverOptionControl || {});
+      if (mutateOptions?.status == 200) {
+        customOptions
+          ? setDataOptions([customOptions, ...mutateOptions.data])
+          : setDataOptions(mutateOptions.data);
+        setLoading(false);
+      }
+    };
+
+    if (serverOptionControl?.path || serverOptionControl?.url) {
+      fetchOptions();
+    } else {
+      !options && setDataOptions([]);
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serverOptionControl?.path, serverOptionControl?.url]);
 
   useEffect(() => {
     register?.(name, validations);
@@ -29,7 +55,7 @@ export function InputCheckboxComponent({
       setInputValue([]);
     }
   }, [value]);
-
+  let dummy = vertical ? [1, 2, 3, 4, 5, 6, 7, 8, 9] : [1, 2, 3];
   return (
     <>
       <div
@@ -60,42 +86,89 @@ export function InputCheckboxComponent({
           <div
             className={`
               w-full flex gap-3 -ml-2
-              ${vertical && 'flex-col'}
+             
+              ${vertical && `flex-col flex-wrap p-2 ${vertical}`}
             `}
           >
-            {options?.map((option, key) => {
-              const checked = Array()
-                .concat(inputValue)
-                .find((val) => val == option.value);
-              return (
-                <CheckboxComponent
-                  key={key}
-                  label={option.label}
-                  name={'option_' + option.value}
-                  checked={!!checked}
-                  disabled={disabled}
-                  size={size}
-                  onChange={() => {
-                    let newVal: string[] | number[] = [];
-                    if (checked) {
-                      newVal = Array()
-                        .concat(inputValue)
-                        .filter((val) => val != option.value);
-                    } else {
-                      newVal = [
-                        ...Array()
+            {loading &&
+              dummy.map((_, key) => {
+                return (
+                  <>
+                    <div
+                      key={key}
+                      className="w-1/3 h-6 skeleton__loading rounded-lg"
+                    ></div>
+                  </>
+                );
+              })}
+            {options &&
+              options?.map((option, key) => {
+                const checked = Array()
+                  .concat(inputValue)
+                  .find((val) => val == option.value);
+                return (
+                  <CheckboxComponent
+                    key={key}
+                    label={option.label}
+                    name={`option[${option.value}]#${name}`}
+                    checked={!!checked}
+                    disabled={disabled}
+                    size={size}
+                    onChange={() => {
+                      let newVal: string[] | number[] = [];
+                      if (checked) {
+                        newVal = Array()
                           .concat(inputValue)
-                          .filter((val) => val != option.value),
-                        option.value,
-                      ];
-                    }
+                          .filter((val) => val != option.value);
+                      } else {
+                        newVal = [
+                          ...Array()
+                            .concat(inputValue)
+                            .filter((val) => val != option.value),
+                          option.value,
+                        ];
+                      }
 
-                    setInputValue(newVal);
-                    onChange?.(newVal);
-                  }}
-                />
-              );
-            })}
+                      setInputValue(newVal);
+                      onChange?.(newVal);
+                    }}
+                  />
+                );
+              })}
+            {dataOptions &&
+              dataOptions?.map((option, key) => {
+                const checked = Array()
+                  .concat(inputValue)
+                  .find((val) => val == option.value);
+                return (
+                  <CheckboxComponent
+                    key={key}
+                    label={option.label!}
+                    name={`option[${option.value}]#${name}`}
+                    checked={!!checked}
+                    disabled={disabled}
+                    size={size}
+                    onChange={() => {
+                      let newVal: string[] | number[] = [];
+                      if (checked) {
+                        newVal = Array()
+                          .concat(inputValue)
+                          .filter((val) => val != option.value);
+                      } else {
+                        newVal = [
+                          ...Array()
+                            .concat(inputValue)
+                            .filter((val) => val != option.value),
+                          option.value,
+                        ];
+                      }
+
+                      setInputValue(newVal);
+                      onChange?.(newVal);
+                    }}
+                  />
+                );
+              })}
           </div>
         </div>
       </div>

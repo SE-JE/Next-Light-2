@@ -21,6 +21,7 @@ export function IconButtonComponent({
   icon,
   loading,
   customPaint,
+  tips,
 }: iconButtonProps) {
   return (
     <>
@@ -41,6 +42,7 @@ export function IconButtonComponent({
         `}
         disabled={disabled || loading}
         onClick={onClick}
+        title={tips}
       >
         {loading ? (
           <>

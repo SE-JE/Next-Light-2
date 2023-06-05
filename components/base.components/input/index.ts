@@ -1,5 +1,6 @@
 export * from './Input.component';
 export * from './InputNumber.component';
+export * from './InputCurrency.component';
 export * from './InputDate.component';
 export * from './InputCheckbox.component';
 export * from './InputRadio.component';

@@ -1,5 +1,5 @@
 import { ReactElement } from 'react';
-import { validationRules } from '../../../../helpers';
+import { getProps, validationRules } from '../../../../helpers';
 
 export type selectOptionProps = {
   label: string;
@@ -14,7 +14,7 @@ export type selectProps = {
   placeholder?: string;
   disabled?: boolean;
   value?: string | string[] | number | number[];
-  onChange?: (value: string | string[] | number | number[]) => any;
+  onChange?: (value: string | string[] | number | number[], data?: any) => any;
   onFocus?: any;
   onBlur?: any;
   error?: string;
@@ -29,4 +29,6 @@ export type selectProps = {
   urlOption?: string;
   multiple?: boolean;
   register?: (name: string, validations?: validationRules) => void;
+  serverOptionControl?: getProps & { cacheName?: string };
+  autoFocus?: boolean;
 };

@@ -20,5 +20,6 @@ export type inputNumberProps = {
   maxLength?: number;
   precision?: number;
   negative?: boolean;
+  autoFocus?: boolean;
   register?: (name: string, validations?: validationRules) => void;
 };

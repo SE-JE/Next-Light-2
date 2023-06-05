@@ -4,6 +4,7 @@ export type radioProps = {
   disabled?: boolean;
   value?: string;
   onChange?: () => any;
+  onClick?: () => any;
   checked?: boolean;
   color?: string;
   error?: string;

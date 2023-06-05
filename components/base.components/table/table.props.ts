@@ -26,4 +26,6 @@ export type tableProps = {
   topBar?: any;
   onRowClick?: (data: object, key: number) => void;
   onRefresh?: () => void;
+  headBar?: any;
+  noControlBar?: boolean;
 };

@@ -18,6 +18,7 @@ export const floatingPageContainer = {
   md: 'w-[100vw] md:w-[50vw] max-w-[700px]',
   lg: 'w-[100vw] md:w-[70vw] max-w-[900px]',
   xl: 'w-[100vw] md:w-[90vw] max-w-[1200px]',
+  '2xl': 'w-[100vw] md:w-[90vw] max-w-[1400px]',
 };
 
 export const modalConfirmIconContainer = {

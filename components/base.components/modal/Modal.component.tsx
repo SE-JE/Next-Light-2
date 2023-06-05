@@ -63,10 +63,11 @@ export function ModalComponent({
 
         <div
           className={`
+            scroll_control
             ${styles.modal__container}
           `}
         >
-          {children}
+          {show && children}
         </div>
 
         {footer && (
@@ -75,7 +76,7 @@ export function ModalComponent({
               ${styles.modal__footer}
             `}
           >
-            {footer}
+            {show && footer}
           </div>
         )}
       </div>

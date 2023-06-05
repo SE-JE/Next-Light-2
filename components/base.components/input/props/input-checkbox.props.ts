@@ -1,3 +1,4 @@
+import { getProps } from './../../../../helpers/api.helpers';
 import { validationRules } from '../../../../helpers';
 
 export type inputCheckboxOptionProps = {
@@ -19,5 +20,7 @@ export type inputCheckboxProps = {
   vertical?: boolean;
   placeholder?: string;
   validations?: validationRules;
+  serverOptionControl?: getProps;
+  customOptions?: any;
   register?: (name: string, validations?: validationRules) => void;
 };

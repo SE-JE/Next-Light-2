@@ -1,9 +1,9 @@
 .input {
-    @apply text-slate-500 bg-base w-full transition duration-150 ease-in-out focus:outline-none border-[1px] border-slate-300 placeholder:font-normal;
+    @apply text-slate-600 bg-background w-full transition duration-150 ease-in-out focus:outline-none border-[1px] border-emerald-100 shadow-inner placeholder:font-normal placeholder:text-slate-400;
 }
 
 .input:focus-visible {
-	@apply border-light-primary;
+	@apply border-primary;
 }
 
 .input__error {
@@ -27,7 +27,7 @@
 }
 
 .input__suggest__container {
-    @apply absolute left-0 mt-2 w-full bg-slate-50 shadow text-left z-30 overflow-hidden ease-in-out;
+    @apply absolute left-0 mt-2 w-full bg-slate-50 shadow text-left z-30 overflow-hidden ease-in-out max-h-[200px] overflow-y-auto;
 }
 
 .input__suggest {
@@ -39,7 +39,7 @@
 }
 
 .input_values_item {
-    @apply flex px-1 pl-2 justify-between bg-light-primary text-gray-500 items-center text-sm rounded-[4px];
+    @apply flex px-1 pl-2 justify-between bg-light-primary text-gray-500 items-center rounded-[4px];
 }
 
 .input_values_delete {

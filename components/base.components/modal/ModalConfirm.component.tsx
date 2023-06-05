@@ -79,11 +79,11 @@ export function ModalConfirmComponent({
             <div className="mt-1">{tip}</div>
           </div>
 
-          {children}
+          {show && children}
 
           <div className="flex justify-center gap-4">
             <ButtonComponent
-              label="Cancel"
+              label="Batal"
               variant="simple"
               onClick={() => onClose()}
               customPaint={{

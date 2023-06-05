@@ -20,5 +20,6 @@ export type inputProps = {
   tip?: string;
   onlyAlphabet?: boolean;
   autoUppercase?: boolean;
+  autoFocus?: boolean;
   register?: (name: string, validations?: validationRules) => void;
 };

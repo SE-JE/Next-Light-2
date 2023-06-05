@@ -35,6 +35,7 @@ export function InputNumberComponent({
   precision,
   negative,
   register,
+  autoFocus,
 }: inputNumberProps) {
   const [inputValue, setInputValue] = useState<string | number>('');
   const [isFocus, setIsFocus] = useState(false);
@@ -89,8 +90,10 @@ export function InputNumberComponent({
       if (maxLength) newVal = Number(newVal?.toString().slice(0, maxLength));
     }
 
-    setInputValue(newVal);
-    onChange?.(Number(newVal));
+    if (newVal != inputValue) {
+      setInputValue(newVal);
+      onChange?.(Number(newVal));
+    }
   }, [inputValue, max, maxLength, min, negative, onChange, precision]);
 
   return (
@@ -161,7 +164,7 @@ export function InputNumberComponent({
               onChange?.(Number(e.target.value));
             }}
             autoComplete={autocomplete == false ? 'off' : ''}
-            autoFocus
+            autoFocus={autoFocus}
           />
 
           {leftIcon && (

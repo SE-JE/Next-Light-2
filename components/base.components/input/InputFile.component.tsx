@@ -127,7 +127,6 @@ export function InputFileComponent({
               onChange?.(e.target.value);
               setIsFocus(false);
             }}
-            autoFocus
             multiple={multiple}
           />
 

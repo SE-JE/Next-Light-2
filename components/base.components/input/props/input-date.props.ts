@@ -7,7 +7,7 @@ export type inputDateProps = {
   placeholder?: string;
   disabled?: boolean;
   value?: string | Date | string[] | Date[];
-  onChange?: (value: Date | Date[]) => any;
+  onChange?: (value: string) => any;
   onFocus?: any;
   onBlur?: any;
   error?: string;
@@ -18,5 +18,7 @@ export type inputDateProps = {
   min?: Date;
   max?: Date;
   defaultView?: 'month' | 'year' | 'decade' | 'century';
+  customFocus?: any;
+  autoFocus?: boolean;
   register?: (name: string, validations?: validationRules) => void;
 };

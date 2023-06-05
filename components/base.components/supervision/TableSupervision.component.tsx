@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { faEdit, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
-import { useEffect, useState } from 'react';
-import { destroy, useGet } from '../../../helpers';
+import { useEffect, useMemo, useState } from 'react';
+import { destroy, getFilterParams, useGet } from '../../../helpers';
 import { ButtonComponent } from '../button';
 import { tableColumnProps, TableComponent } from '../table';
 import { tableSupervisionProps } from './table-supervision.props';
@@ -9,16 +9,35 @@ import { formProps } from './form-supervision.props';
 import { inputCheckboxProps, inputRadioProps, selectProps } from '../input';
 import { FormSupervisionComponent } from './FormSupervision.component';
 import { FloatingPageComponent, ModalConfirmComponent } from '../modal';
+import { useRouter } from 'next/router';
 
 export function TableSupervisionComponent({
   title,
   fetchControl,
   customTopBar,
+  headBar,
   columnControl,
   formControl,
   formUpdateControl,
   actionControl,
+  setToLoading,
+  setToRefresh,
+  includeFilters,
+  customDetail,
+  unUrlPage,
+  noControlBar,
+  permissionCode,
+  customTopBarWithForm,
+  refreshOnClose,
 }: tableSupervisionProps) {
+  const router = useRouter();
+  const {
+    page: pageParams,
+    paginate: paginateParams,
+    search: searchParams,
+    'sort.direction': sortDirectionParams,
+    'sort.column': sortColumnParams,
+  } = router.query;
   const [isError, setIsError] = useState(false);
 
   const [modalForm, setModalForm] = useState(false);
@@ -40,7 +59,8 @@ export function TableSupervisionComponent({
   });
   const [search, setSearch] = useState<string>('');
   const [searchColumn, setSearchColumn] = useState<string>('');
-  const [filter, setFilter] = useState<object[]>([]);
+  const [filter, setFilter] = useState<getFilterParams[]>([]);
+  const [mutatefilter, setMutateFilter] = useState<getFilterParams[]>([]);
 
   const [columns, setColumns] = useState<tableColumnProps[]>([]);
   const [dataTable, setDataTable] = useState<object[]>([]);
@@ -48,19 +68,60 @@ export function TableSupervisionComponent({
   const [dataSelected, setDataSelected] = useState<number | null>(null);
 
   const [forms, setForms] = useState<formProps[]>([]);
-  // const [updateForms, setUpdateForms] = useState<formProps[]>([]);
-
-  const [loading, code, data, reset] = useGet({
-    ...fetchControl,
-    params: {
-      page,
-      paginate,
-      sortBy: sort.column,
-      sortDirection: sort.direction,
-      search: search,
-      filter: filter,
+  const [loading, code, data, reset] = useGet(
+    {
+      ...fetchControl,
+      params: {
+        page,
+        paginate,
+        sortBy: sort.column,
+        sortDirection: sort.direction,
+        search: search,
+        filter: mutatefilter.length ? mutatefilter : undefined,
+      },
     },
-  });
+    setToLoading
+  );
+
+  const hasPermissions = useMemo(() => {
+    return data?.allowed_privileges
+      ?.filter((p: string) => Number(p.split('.')[0]) == permissionCode)
+      .map((p: string) => p.split('.')[1]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, permissionCode]);
+
+  useEffect(() => {
+    !loading && reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setToRefresh]);
+
+  useEffect(() => {
+    if (!unUrlPage) {
+      pageParams && setPage(Number(pageParams));
+      paginateParams && setPaginate(Number(paginateParams));
+      searchParams && setSearch(String(searchParams));
+      sortColumnParams &&
+        sortDirectionParams &&
+        setSort({
+          column: String(sortColumnParams),
+          direction: sortDirectionParams as 'asc' | 'desc',
+        });
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router]);
+
+  useEffect(() => {
+    if (!unUrlPage) {
+      const url = new URL(window.location.href);
+      search && url.searchParams.set('search', search);
+      page && url.searchParams.set('page', page.toString());
+      paginate && url.searchParams.set('paginate', paginate.toString());
+      sort?.column && url.searchParams.set('sort.column', sort.column);
+      sort?.direction && url.searchParams.set('sort.direction', sort.direction);
+      window.history.pushState({}, '', url.toString());
+    }
+  }, [page, paginate, sort.column, sort.direction, search, unUrlPage]);
 
   useEffect(() => {
     if (!loading) {
@@ -189,21 +250,29 @@ export function TableSupervisionComponent({
             newData.push({
               ...items,
               action: actionControl?.custom ? (
-                actionControl?.custom(originalData[key], {
-                  setModalView: (e: any) => setModalView(e),
-                  setDataSelected: (e: any) => setDataSelected(e),
-                  setModalForm: (e: any) => setModalForm(e),
-                  setModalDelete: (e: any) => setModalDelete(e),
-                })
+                actionControl?.custom(
+                  originalData[key],
+                  {
+                    setModalView: (e: any) => setModalView(e),
+                    setDataSelected: () => setDataSelected(key),
+                    setModalForm: (e: any) => setModalForm(e),
+                    setModalDelete: (e: any) => setModalDelete(e),
+                  },
+                  hasPermissions
+                )
               ) : (
                 <>
                   {actionControl?.include &&
-                    actionControl?.include(originalData[key], {
-                      setModalView: (e: any) => setModalView(e),
-                      setDataSelected: (e: any) => setDataSelected(e),
-                      setModalForm: (e: any) => setModalForm(e),
-                      setModalDelete: (e: any) => setModalDelete(e),
-                    })}
+                    actionControl?.include(
+                      originalData[key],
+                      {
+                        setModalView: (e: any) => setModalView(e),
+                        setDataSelected: () => setDataSelected(key),
+                        setModalForm: (e: any) => setModalForm(e),
+                        setModalDelete: (e: any) => setModalDelete(e),
+                      },
+                      hasPermissions
+                    )}
 
                   {/* {(!actionControl?.except ||
                     !actionControl?.except.includes('detail')) && (
@@ -221,37 +290,41 @@ export function TableSupervisionComponent({
                     />
                   )} */}
 
-                  {(!actionControl?.except ||
-                    !actionControl?.except.includes('edit')) && (
-                    <ButtonComponent
-                      icon={faEdit}
-                      label={'Ubah'}
-                      variant="outline"
-                      paint="warning"
-                      size={'xs'}
-                      rounded
-                      onClick={() => {
-                        setModalForm(true);
-                        setDataSelected(key);
-                      }}
-                    />
-                  )}
+                  {(!permissionCode ||
+                    hasPermissions?.find((p: number) => p == 3)) &&
+                    (!actionControl?.except ||
+                      !actionControl?.except?.includes('edit')) && (
+                      <ButtonComponent
+                        icon={faEdit}
+                        label={'Ubah'}
+                        variant="outline"
+                        paint="warning"
+                        size={'xs'}
+                        rounded
+                        onClick={() => {
+                          setModalForm(true);
+                          setDataSelected(key);
+                        }}
+                      />
+                    )}
 
-                  {(!actionControl?.except ||
-                    !actionControl?.except.includes('delete')) && (
-                    <ButtonComponent
-                      icon={faTrash}
-                      label={'Hapus'}
-                      variant="outline"
-                      paint="danger"
-                      size={'xs'}
-                      rounded
-                      onClick={() => {
-                        setModalDelete(true);
-                        setDataSelected(key);
-                      }}
-                    />
-                  )}
+                  {(!permissionCode ||
+                    hasPermissions?.find((p: number) => p == 4)) &&
+                    (!actionControl?.except ||
+                      !actionControl?.except?.includes('delete')) && (
+                      <ButtonComponent
+                        icon={faTrash}
+                        label={'Hapus'}
+                        variant="outline"
+                        paint="danger"
+                        size={'xs'}
+                        rounded
+                        onClick={() => {
+                          setModalDelete(true);
+                          setDataSelected(key);
+                        }}
+                      />
+                    )}
                 </>
               ),
             });
@@ -259,33 +332,90 @@ export function TableSupervisionComponent({
 
           setDataTable(newData);
           setDataOriginal(originalData);
+          setTotalRow(data.total_row);
+        } else {
+          setDataTable([]);
+          setDataOriginal([]);
+          setTotalRow(0);
+
+          if (data?.columns?.length) {
+            let newForms: formProps[] = [];
+
+            data.columns.map((column: string) => {
+              newForms.push({
+                construction: {
+                  label: column.charAt(0).toUpperCase() + column.slice(1),
+                  name: column,
+                  placeholder: 'Please enter ' + column + '...',
+                },
+              });
+            });
+
+            setForms(newForms);
+          }
         }
       } else {
         setIsError(true);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, code, data, columnControl, formControl, actionControl]);
+
+  useEffect(() => {
+    if (includeFilters) {
+      setMutateFilter([
+        ...(Object.keys(filter).map((key) => {
+          return {
+            column: key,
+            type: 'in',
+            value: filter[key as keyof object],
+          };
+        }) as getFilterParams[]),
+        ...includeFilters,
+      ]);
+    } else {
+      setMutateFilter(
+        Object.keys(filter).map((key) => {
+          return {
+            column: key,
+            type: 'in',
+            value: filter[key as keyof object],
+          };
+        }) as getFilterParams[]
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [includeFilters, filter]);
 
   return (
     <>
-      <h1 className="text-xl font-bold mb-4">{title}</h1>
+      <h1 className="text-lg lg:text-xl font-bold mb-2 lg:mb-4">{title}</h1>
 
       {!isError ? (
         <TableComponent
           topBar={
-            customTopBar ? (
+            customTopBarWithForm ? (
+              customTopBarWithForm?.modalForm({
+                setModalForm: (e: any) => setModalForm(e),
+              })
+            ) : customTopBar ? (
               customTopBar
             ) : (
               <>
-                <ButtonComponent
-                  label="Add New Data"
-                  icon={faPlus}
-                  size="sm"
-                  onClick={() => setModalForm(true)}
-                />
+                {(!permissionCode ||
+                  hasPermissions?.find((p: number) => p == 2)) && (
+                  <ButtonComponent
+                    label="Tambah Baru"
+                    icon={faPlus}
+                    size="sm"
+                    onClick={() => setModalForm(true)}
+                  />
+                )}
               </>
             )
           }
+          noControlBar={noControlBar}
+          headBar={headBar}
           columns={
             !columnControl?.custom
               ? columns
@@ -320,10 +450,14 @@ export function TableSupervisionComponent({
           onChangeSearch={(e) => setSearch(e)}
           search={search}
           onRefresh={reset}
-          onRowClick={(item, key) => {
-            setDataSelected(key);
-            setModalView(true);
-          }}
+          onRowClick={
+            actionControl?.except?.includes('detail')
+              ? undefined
+              : (item, key) => {
+                  setDataSelected(key);
+                  setModalView(true);
+                }
+          }
         />
       ) : (
         <div className="flex flex-col items-center justify-center gap-8 p-5">
@@ -335,49 +469,77 @@ export function TableSupervisionComponent({
       <FloatingPageComponent
         title={
           dataSelected === null
-            ? 'Tambah ' + title + ' Baru'
-            : 'Ubah data ' + title
+            ? typeof title == 'string'
+              ? 'Tambah ' + title + ' Baru'
+              : 'Tambah Baru'
+            : typeof title == 'string'
+            ? 'Ubah data ' + title
+            : 'Ubah Data'
         }
         tip={'Masukkan data yang valid dan benar!'}
         show={modalForm}
+        size={
+          (dataSelected === null
+            ? formControl?.size
+            : formUpdateControl?.size || formControl?.size) || 'md'
+        }
         onClose={() => {
           setModalForm(false);
           setDataSelected(null);
+          refreshOnClose && formUpdateControl?.custom && reset();
         }}
+        className={''}
       >
-        <div className="p-6">
-          <FormSupervisionComponent
-            submitControl={{
-              path:
+        <div className="px-6 pt-4 pb-20 h-full overflow-scroll scroll_control">
+          {modalForm && (
+            <FormSupervisionComponent
+              submitControl={{
+                path:
+                  dataSelected === null
+                    ? fetchControl.path
+                    : fetchControl.path +
+                      '/' +
+                      (dataOriginal?.at(dataSelected) as { id: number })?.id,
+                includeHeaders: fetchControl.includeHeaders,
+                contentType: formControl?.contentType
+                  ? formControl?.contentType
+                  : undefined,
+              }}
+              // method={dataSelected === null ? 'post' : 'put'}
+              confirmation
+              forms={
+                dataSelected == null
+                  ? formControl?.custom || forms
+                  : formUpdateControl?.custom || formControl?.custom || forms
+              }
+              defaultValue={
                 dataSelected === null
-                  ? fetchControl.path
-                  : fetchControl.path +
-                    '/' +
-                    (dataOriginal?.at(dataSelected) as { id: number })?.id,
-            }}
-            // method={dataSelected === null ? 'post' : 'put'}
-            confirmation
-            forms={forms}
-            defaultValue={
-              dataSelected === null
-                ? undefined
-                : formUpdateControl?.customDefaultValue
-                ? formUpdateControl?.customDefaultValue(
-                    dataOriginal?.at(dataSelected) || {}
-                  )
-                : dataOriginal?.at(dataSelected)
-            }
-            onSuccess={() => {
-              setModalForm(false);
-              reset();
-              setDataSelected(null);
-            }}
-          />
+                  ? formControl?.customDefaultValue || null
+                  : formUpdateControl?.customDefaultValue
+                  ? {
+                      _method: 'PUT',
+                      ...formUpdateControl?.customDefaultValue(
+                        dataOriginal?.at(dataSelected) || {}
+                      ),
+                    }
+                  : { _method: 'PUT', ...dataOriginal?.at(dataSelected) }
+              }
+              onSuccess={() => {
+                setModalForm(false);
+                reset();
+                setDataSelected(null);
+              }}
+            />
+          )}
         </div>
       </FloatingPageComponent>
 
       <ModalConfirmComponent
-        title={'Yakin ingin menghapus ' + title}
+        title={
+          typeof title == 'string'
+            ? 'Yakin ingin menghapus ' + title
+            : 'Yakin ingin menghapus'
+        }
         show={modalDelete}
         onClose={() => {
           setModalDelete(false);
@@ -388,23 +550,22 @@ export function TableSupervisionComponent({
 
           if (dataSelected !== null) {
             let response = await destroy({
+              ...fetchControl,
               path:
                 fetchControl.path +
                 '/' +
-                (data?.at(dataSelected) as { id: number }).id,
+                (dataOriginal?.at(dataSelected) as { id: number }).id,
             });
 
             if (response?.status == 200 || response?.status == 201) {
-              // setModalDeleteError(false);
               setLoadingDelete(false);
-              // setModalDeleteSuccess(true);
+              reset();
               setDataSelected(null);
               setModalDelete(false);
             } else {
-              // setModalDeleteSuccess(false);
               // setModalDeleteError(true);
               setLoadingDelete(false);
-              setModalDelete(false);
+              // setModalDelete(false);
             }
           }
         }}
@@ -421,24 +582,33 @@ export function TableSupervisionComponent({
           setModalView(false);
           setDataSelected(null);
         }}
+        className={''}
       >
-        <div className="flex flex-col gap-2 p-6">
-          {columns.map((column, key) => {
-            return (
-              <div
-                className="flex justify-between gap-4 py-2.5 border-b"
-                key={key}
-              >
-                <h6 className="text-lg">{column.label} :</h6>
-                <p className="text-lg font-semibold">
-                  {dataSelected && dataOriginal?.at(dataSelected)
-                    ? (dataOriginal?.at(dataSelected) as any)[column.selector]
-                    : '-'}
-                </p>
-              </div>
-            );
-          })}
-        </div>
+        {modalView && dataSelected != null && customDetail ? (
+          customDetail(dataOriginal?.at(dataSelected) || {})
+        ) : (
+          <div className="flex flex-col gap-2 p-6">
+            {columns.map((column, key) => {
+              return (
+                <div
+                  className="flex justify-between gap-4 py-2.5 border-b"
+                  key={key}
+                >
+                  <h6 className="text-lg">{column.label} :</h6>
+                  <p className="text-lg font-semibold">
+                    {dataSelected != null &&
+                    dataOriginal?.at(dataSelected) &&
+                    typeof (dataOriginal?.at(dataSelected) as any)[
+                      column.selector
+                    ] != 'object'
+                      ? (dataOriginal?.at(dataSelected) as any)[column.selector]
+                      : '-'}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </FloatingPageComponent>
     </>
   );

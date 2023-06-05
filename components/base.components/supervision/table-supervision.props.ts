@@ -1,6 +1,7 @@
 import { filterColumnProps } from './../table/filter.props';
-import { getProps } from '../../../helpers';
+import { getFilterParams, getProps } from '../../../helpers';
 import { formProps } from './form-supervision.props';
+import { floatingPageProps } from '../modal';
 
 export type tableSupervisionColumnProps = {
   selector: string;
@@ -21,13 +22,17 @@ export type tableSupervisionColumnGroupProps = {
 };
 
 export type tableSupervisionFormGroupProps = {
+  size: floatingPageProps['size'];
   custom: formProps[];
   change: formProps[];
   include: formProps[];
   except: string[];
+  customDefaultValue: object;
+  contentType: 'application/json' | 'multipart/form-data';
 };
 
 export type tableSupervisionFormUpdateGroupProps = {
+  size: floatingPageProps['size'];
   custom: formProps[];
   change: formProps[];
   include: formProps[];
@@ -36,19 +41,27 @@ export type tableSupervisionFormUpdateGroupProps = {
 };
 
 export type tableSupervisionActionProps = {
-  custom: (data: object, handler: object) => any;
+  custom: (data: object, handler: object, hasPermission: number[]) => any;
   except: ('detail' | 'edit' | 'delete')[];
-  include: (data: object, handler: object) => any;
+  include: (data: object, handler: object, hasPermissions: number[]) => any;
 };
 
 export type tableSupervisionProps = {
   title?: string;
   fetchControl: getProps;
   setToRefresh?: boolean;
+  refreshOnClose?: boolean;
   setToLoading?: boolean;
   customTopBar?: any;
+  customTopBarWithForm?: any;
+  headBar?: any;
   columnControl?: tableSupervisionColumnGroupProps;
   formControl?: tableSupervisionFormGroupProps;
   formUpdateControl?: tableSupervisionFormUpdateGroupProps;
   actionControl?: tableSupervisionActionProps;
+  includeFilters?: getFilterParams[];
+  customDetail?: (data: object) => any;
+  unUrlPage?: boolean;
+  noControlBar?: boolean;
+  permissionCode?: number;
 };

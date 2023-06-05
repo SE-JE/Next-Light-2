@@ -69,7 +69,7 @@ export default function PaginateComponent({
           {page > 1 && (
             <div
               className="p-3 text-slate-500 cursor-pointer"
-              onClick={() => onChange?.(totalRow, page - 1, paginate)}
+              onClick={() => onChange?.(totalRow, paginate, page - 1)}
             >
               <FontAwesomeIcon icon={faChevronLeft} />
             </div>
@@ -79,7 +79,7 @@ export default function PaginateComponent({
             <>
               <div
                 className="px-4 py-1.5 bg-white rounded-md cursor-pointer hover:scale-110"
-                onClick={() => onChange?.(totalRow, 1, paginate)}
+                onClick={() => onChange?.(totalRow, paginate, 1)}
               >
                 1
               </div>
@@ -96,7 +96,7 @@ export default function PaginateComponent({
                       ? 'bg-light-primary text-primary'
                       : 'bg-white cursor-pointer'
                   } hover:scale-110`}
-                  onClick={() => onChange?.(totalRow, itemPage, paginate)}
+                  onClick={() => onChange?.(totalRow, paginate, itemPage)}
                 >
                   {itemPage}
                 </div>
@@ -108,7 +108,7 @@ export default function PaginateComponent({
               <div
                 className="px-4 py-1.5 bg-white rounded-md cursor-pointer hover:scale-110"
                 onClick={() =>
-                  onChange?.(totalRow, pagination.lastPage ?? 1, paginate)
+                  onChange?.(totalRow, paginate, pagination.lastPage ?? 1)
                 }
               >
                 {pagination.lastPage}
@@ -118,7 +118,7 @@ export default function PaginateComponent({
           {pagination.lastPage && page < pagination.lastPage && (
             <div
               className="p-3 text-slate-500 cursor-pointer"
-              onClick={() => onChange?.(totalRow, page + 1, paginate)}
+              onClick={() => onChange?.(totalRow, paginate, page + 1)}
             >
               <FontAwesomeIcon icon={faChevronRight} />
             </div>

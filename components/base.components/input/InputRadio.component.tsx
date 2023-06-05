@@ -59,7 +59,7 @@ export function InputRadioComponent({
         >
           <div
             className={`
-              w-full flex gap-3 -ml-2
+              w-full flex gap-3
               ${vertical && 'flex-col'}
             `}
           >
@@ -68,7 +68,7 @@ export function InputRadioComponent({
                 <RadioComponent
                   key={key}
                   label={option.label}
-                  name={'option_' + option.value}
+                  name={'option_' + name + '_' + option.value}
                   checked={inputValue == option.value}
                   disabled={disabled}
                   onChange={() => {

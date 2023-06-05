@@ -7,6 +7,7 @@ export function RadioComponent({
   name,
   color,
   onChange,
+  onClick,
   checked,
   value,
   disabled,
@@ -41,13 +42,15 @@ export function RadioComponent({
           flex gap-2 items-center cursor-pointer
           ${disabled && 'pointer-events-none opacity-60'}
         `}
+        onClick={() => onClick?.()}
       >
         <div
           className={`
             flex justify-center items-center rounded-full w-5 h-5
+            active:outline
             ${
               checked
-                ? ` border-[5px] outline outline-light-primary border-${
+                ? ` border-[5px] outline-light-${color || 'primary'} border-${
                     color || 'primary'
                   } text-white`
                 : 'border-slate-300 text-slate-300  border-2'

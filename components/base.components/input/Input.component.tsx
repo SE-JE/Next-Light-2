@@ -36,6 +36,7 @@ export function InputComponent({
   onlyAlphabet,
   autoUppercase,
   register,
+  autoFocus,
 }: inputProps) {
   const [inputValue, setInputValue] = useState('');
   const [isFocus, setIsFocus] = useState(false);
@@ -233,7 +234,7 @@ export function InputComponent({
             autoComplete={
               autocomplete == false || dataSuggestions?.length ? 'off' : ''
             }
-            autoFocus
+            autoFocus={autoFocus}
           />
 
           {leftIcon && (
@@ -243,7 +244,7 @@ export function InputComponent({
                 ${inputIcon['left'][size || 'md']}
                 ${
                   isFocus
-                    ? 'text-primary'
+                    ? 'text-secondary'
                     : isInvalid
                     ? 'text-danger'
                     : 'text-slate-400'
@@ -261,7 +262,7 @@ export function InputComponent({
                 ${inputIcon['right'][size || 'md']}
                 ${
                   isFocus
-                    ? 'text-primary'
+                    ? 'text-secondary'
                     : isInvalid
                     ? 'text-danger'
                     : 'text-slate-400'

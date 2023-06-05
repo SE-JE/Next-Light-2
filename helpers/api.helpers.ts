@@ -191,34 +191,6 @@ export const post = async ({
 };
 
 // =========================>
-// ## post hook function
-// =========================>
-// export const usePost = (props: postProps) => {
-//   const [loading, setLoading] = useState<boolean>(true);
-//   const [code, setCode] = useState<number | null>(null);
-//   const [data, setData] = useState<any | null>(null);
-
-//   const onSubmit: () => void = () => {
-//     setLoading(true);
-
-//     const fetch = async () => {
-//       const response = await post(props);
-
-//       if (response?.status) {
-//         setCode(response?.status);
-//         setData(response?.data);
-//       }
-//     };
-
-//     if (props.path || props.url) {
-//       fetch();
-//     }
-//   };
-
-//   return [onSubmit, loading, code, data];
-// };
-
-// =========================>
 // ## type of patch props
 // =========================>
 export type patchProps = {
@@ -278,43 +250,6 @@ export const patch = async ({
     return fetch;
   }
 };
-
-// =========================>
-// ## patch hook function
-// =========================>
-// export const usePatch = (props: patchProps) => {
-//   const [loading, setLoading] = useState<boolean>(true);
-//   const [code, setCode] = useState<number | null>(null);
-//   const [data, setData] = useState<any | null>(null);
-
-//   useEffect(() => {
-//     setLoading(true);
-
-//     const fetch = async () => {
-//       const response = await patch(props);
-
-//       if (response?.status) {
-//         setCode(response?.status);
-//         setData(response?.data);
-//       }
-//     };
-
-//     if (props.path || props.url) {
-//       fetch();
-//     }
-//   }, [
-//     props,
-//     props.path,
-//     props.url,
-//     props.params,
-//     props.body,
-//     props.includeHeaders,
-//     props.bearer,
-//     props.contentType,
-//   ]);
-
-//   return [loading, code, data];
-// };
 
 // =========================>
 // ## type of destroy props
@@ -459,44 +394,4 @@ export const download = async ({
     fileDownload(fetch.data, fileName);
     return fetch.data;
   }
-};
-
-// =========================>
-// ## patch hook function
-// =========================>
-export const useDownload = (props: downloadProps) => {
-  const [loading, setLoading] = useState<boolean>(true);
-  const [code, setCode] = useState<number | null>(null);
-  const [progress, setProgress] = useState<number | null>(null);
-
-  useEffect(() => {
-    setLoading(true);
-
-    const fetch = async () => {
-      const response = await download({
-        ...props,
-        onDownloadProgress: (e) => {
-          setProgress(e.progress || 0);
-        },
-      });
-
-      if (response?.status) {
-        setCode(response?.status);
-        setProgress(100);
-      }
-    };
-
-    if (props.path || props.url) {
-      fetch();
-    }
-  }, [
-    props,
-    props.path,
-    props.url,
-    props.params,
-    props.includeHeaders,
-    props.bearer,
-  ]);
-
-  return [loading, code, progress];
 };

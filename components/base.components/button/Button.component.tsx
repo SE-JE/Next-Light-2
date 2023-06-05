@@ -4,6 +4,7 @@ import {
   buttonVariant,
   buttonContainer,
   buttonRadius,
+  buttonIcon,
 } from './button.decorate';
 import styles from './button.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -57,20 +58,28 @@ export function ButtonComponent({
             ></div>
           </>
         ) : (
-          <FontAwesomeIcon
-            icon={icon}
-            className={`
-              ${
-                size == 'xs'
-                  ? 'text-xs'
-                  : size == 'sm'
-                  ? 'text-sm mb-0.5'
-                  : size == 'lg'
-                  ? 'text-xl mb-0.5'
-                  : 'text-base mb-0.5'
-              }
-            `}
-          />
+          <>
+            {icon && (
+              <FontAwesomeIcon
+                icon={icon}
+                className={`
+                  ${
+                    !customPaint &&
+                    buttonIcon[variant || 'solid'][paint || 'primary']
+                  }
+                  ${
+                    size == 'xs'
+                      ? 'text-xs'
+                      : size == 'sm'
+                      ? 'text-sm mb-0.5'
+                      : size == 'lg'
+                      ? 'text-xl mb-0.5'
+                      : 'text-base mb-0.5'
+                  }
+                `}
+              />
+            )}
+          </>
         )}
         {label}
       </button>

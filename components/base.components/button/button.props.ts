@@ -36,4 +36,5 @@ export type iconButtonProps = {
   onClick?: any;
   loading?: boolean;
   hover?: boolean;
+  tips?: string | undefined;
 };

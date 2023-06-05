@@ -60,7 +60,7 @@ export function CheckboxComponent({
         </div>
         <div
           className={`
-            mt-1 whitespace-nowrap
+            whitespace-nowrap
             ${checked && 'font-semibold'}
             ${size == 'lg' ? '' : size == 'sm' ? 'text-xs' : 'text-sm'}
           `}

@@ -9,7 +9,7 @@ import {
   faRefresh,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { IconButtonComponent } from '../button';
 import {
   InputCheckboxComponent,
@@ -42,6 +42,8 @@ export function TableComponent({
   topBar,
   onRowClick,
   onRefresh,
+  headBar,
+  noControlBar,
 }: tableProps) {
   const [displayColumns, setDisplayColumns] = useState<string[]>([]);
   const [floatingAction, setFloatingAction] = useState(false);
@@ -51,6 +53,7 @@ export function TableComponent({
   const [floatingDisplay, setFloatingDisplay] = useState(false);
   const [keyword, setKeyword] = useState<string>('');
   const [keywordSearch] = useLazySearch(keyword);
+  const [actionColumnWidth, setActionColumnWidth] = useState<number>(0);
 
   useEffect(() => {
     if (columns) {
@@ -72,184 +75,202 @@ export function TableComponent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keywordSearch]);
 
+  const actionColumnRef = useRef(null);
+
+  useEffect(() => {
+    if (actionColumnRef.current) {
+      const el = actionColumnRef.current as HTMLDivElement;
+
+      setActionColumnWidth(el.offsetWidth);
+    }
+  }, [
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    actionColumnRef.current &&
+      actionColumnRef.current['offsetWidth' as keyof object],
+  ]);
+
+  // console.log(actionColumnWidth);
+
   return (
     <>
       {topBar && (
         <div className="p-2 rounded-lg bg-white shadow-sm">{topBar}</div>
       )}
 
-      <div className="flex items-center justify-between my-4">
-        {
-          // =========================>
-          // ## Input Paginate
-          // =========================>
-        }
-        <div className="relative z-20">
-          {pagination && (
-            <>
-              <div className="bg-white p-1.5 rounded-md w-24">
-                <SelectComponent
-                  name="paginate"
-                  options={[
-                    {
-                      value: 10,
-                      label: '10',
-                    },
-                    {
-                      value: 20,
-                      label: '20',
-                    },
-                    {
-                      value: 30,
-                      label: '30',
-                    },
-                    {
-                      value: 50,
-                      label: '50',
-                    },
-                  ]}
-                  size="sm"
-                  value={pagination.paginate}
-                  onChange={(e) => {
-                    pagination.onChange?.(
-                      pagination.totalRow,
-                      Number(e),
-                      pagination.page
-                    );
-                  }}
-                />
-              </div>
-            </>
-          )}
-        </div>
+      {!noControlBar && (
+        <div className="flex items-center justify-between my-4">
+          {
+            // =========================>
+            // ## Input Paginate
+            // =========================>
+          }
+          <div className="relative z-40">
+            {pagination && (
+              <>
+                <div className="bg-white p-1.5 rounded-md w-24">
+                  <SelectComponent
+                    name="paginate"
+                    options={[
+                      {
+                        value: 10,
+                        label: '10',
+                      },
+                      {
+                        value: 20,
+                        label: '20',
+                      },
+                      {
+                        value: 30,
+                        label: '30',
+                      },
+                      {
+                        value: 50,
+                        label: '50',
+                      },
+                    ]}
+                    size="sm"
+                    value={pagination.paginate}
+                    onChange={(e) => {
+                      pagination.onChange?.(
+                        pagination.totalRow,
+                        Number(e),
+                        pagination.page
+                      );
+                    }}
+                  />
+                </div>
+              </>
+            )}
+          </div>
 
-        {!excludeSearch && (
-          <div className="w-1/2 flex gap-2 justify-end">
-            {
-              // =========================>
-              // ## Display column
-              // =========================>
-            }
-            <div className="bg-white p-1.5 rounded-md relative">
-              <IconButtonComponent
-                icon={faEyeLowVision}
-                customPaint={{
-                  bg: 'base',
-                  border: 'slate-300 ',
-                  color: 'slate-400',
-                }}
-                onClick={() => {
-                  setFloatingDisplay(!floatingDisplay);
-                }}
-                size="sm"
-              />
-              <OutsideClickHandler
-                onOutsideClick={() => {
-                  setFloatingDisplay(false);
-                }}
-              >
-                <div
-                  className={`
+          {!excludeSearch && (
+            <div className="w-3/4 lg:w-1/2 flex gap-2 justify-end">
+              {
+                // =========================>
+                // ## Display column
+                // =========================>
+              }
+              <div className="bg-white p-1.5 rounded-md relative">
+                <IconButtonComponent
+                  icon={faEyeLowVision}
+                  customPaint={{
+                    bg: 'base',
+                    border: 'slate-300 ',
+                    color: 'slate-400',
+                  }}
+                  onClick={() => {
+                    setFloatingDisplay(!floatingDisplay);
+                  }}
+                  size="sm"
+                />
+                <OutsideClickHandler
+                  onOutsideClick={() => {
+                    setFloatingDisplay(false);
+                  }}
+                >
+                  <div
+                    className={`
                 absolute -bottom-1 bg-white translate-y-full right-0 p-3 w-[220px] z-20 rounded-lg shadow
                 ${!floatingDisplay && 'scale-y-0 top-0 opacity-0'}
               `}
-                >
-                  <label className="text-sm font-semibold mb-2">
-                    Kolom Ditampilkan
-                  </label>
-                  <InputCheckboxComponent
-                    vertical
-                    name="show_column"
-                    options={columns?.map((column) => {
-                      return {
-                        label: column.label,
-                        value: column.selector,
-                      };
-                    })}
-                    onChange={(e) => {
-                      setDisplayColumns(
-                        Array()
-                          .concat(e)
-                          .map((val) => String(val))
-                      );
-                    }}
+                  >
+                    <label className="text-sm font-semibold mb-2">
+                      Kolom Ditampilkan
+                    </label>
+                    <InputCheckboxComponent
+                      vertical
+                      name="show_column"
+                      options={columns?.map((column) => {
+                        return {
+                          label: column.label,
+                          value: column.selector,
+                        };
+                      })}
+                      onChange={(e) => {
+                        setDisplayColumns(
+                          Array()
+                            .concat(e)
+                            .map((val) => String(val))
+                        );
+                      }}
+                      size="sm"
+                      value={displayColumns}
+                    />
+                  </div>
+                </OutsideClickHandler>
+              </div>
+              {headBar && <div>{headBar}</div>}
+              <div className="bg-white p-1.5 rounded-md flex gap-1.5 w-[350px]">
+                {
+                  // =========================>
+                  // ## Search column
+                  // =========================>
+                }
+                {searchableColumn && searchableColumn?.length > 0 && (
+                  <div className="w-36">
+                    <SelectComponent
+                      name="searchableColumn"
+                      options={[
+                        { label: 'Semua', value: 'all' },
+                        ...columns
+                          .filter((column) =>
+                            searchableColumn.includes(column.selector)
+                          )
+                          .map((column) => {
+                            return {
+                              label: column.label,
+                              value: column.selector,
+                            };
+                          }),
+                      ]}
+                      size="sm"
+                      value={searchColumn || 'all'}
+                      onChange={(e) => onChangeSearchColumn?.(String(e))}
+                    />
+                  </div>
+                )}
+
+                {
+                  // =========================>
+                  // ## Input search
+                  // =========================>
+                }
+                <div className="w-full">
+                  <InputComponent
+                    name="search"
                     size="sm"
-                    value={displayColumns}
+                    placeholder="Cari disini..."
+                    rightIcon={faMagnifyingGlass}
+                    value={keyword}
+                    onChange={(e) => setKeyword(e)}
                   />
                 </div>
-              </OutsideClickHandler>
-            </div>
-
-            <div className="bg-white p-1.5 rounded-md flex gap-1.5 w-[350px]">
-              {
-                // =========================>
-                // ## Search column
-                // =========================>
-              }
-              {searchableColumn && searchableColumn?.length > 0 && (
-                <div className="w-36">
-                  <SelectComponent
-                    name="searchableColumn"
-                    options={[
-                      { label: 'Semua', value: 'all' },
-                      ...columns
-                        .filter((column) =>
-                          searchableColumn.includes(column.selector)
-                        )
-                        .map((column) => {
-                          return {
-                            label: column.label,
-                            value: column.selector,
-                          };
-                        }),
-                    ]}
-                    size="sm"
-                    value={searchColumn || 'all'}
-                    onChange={(e) => onChangeSearchColumn?.(String(e))}
-                  />
-                </div>
-              )}
-
-              {
-                // =========================>
-                // ## Input search
-                // =========================>
-              }
-              <div className="w-full">
-                <InputComponent
-                  name="search"
+              </div>
+              <div className="bg-white p-1.5 rounded-md relative">
+                <IconButtonComponent
+                  icon={faRefresh}
+                  customPaint={{
+                    bg: 'base',
+                    border: 'slate-300 ',
+                    color: 'slate-400',
+                  }}
+                  onClick={() => {
+                    onRefresh?.();
+                  }}
                   size="sm"
-                  placeholder="Cari disini..."
-                  rightIcon={faMagnifyingGlass}
-                  value={keyword}
-                  onChange={(e) => setKeyword(e)}
                 />
               </div>
             </div>
-            <div className="bg-white p-1.5 rounded-md relative">
-              <IconButtonComponent
-                icon={faRefresh}
-                customPaint={{
-                  bg: 'base',
-                  border: 'slate-300 ',
-                  color: 'slate-400',
-                }}
-                onClick={() => {
-                  onRefresh?.();
-                }}
-                size="sm"
-              />
-            </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       <div className="relative w-full">
         <BoxShadowComponent
           onScroll={(e) =>
             setFloatingAction(
               e.target.scrollLeft + e.target.offsetWidth <=
-                e.target.scrollWidth - 200
+                e.target.scrollWidth - actionColumnWidth
             )
           }
         >
@@ -287,10 +308,13 @@ export function TableComponent({
                   // =========================>
                 }
                 <div className="flex flex-col gap-y-2">
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((_, key) => {
+                  {[1, 2, 3].map((_, key) => {
                     return (
                       <div
-                        className="flex items-center gap-4 bg-white rounded-lg shadow-sm relative p-2.5"
+                        style={{
+                          animationDelay: `${0.25 + key * 0.05}s`,
+                        }}
+                        className="flex items-center gap-4 bg-white rounded-lg shadow-sm relative p-2.5 intro__table__column"
                         key={key}
                       >
                         <div className="w-16 px-4 py-2.5 font-medium skeleton__loading"></div>
@@ -359,10 +383,10 @@ export function TableComponent({
                                       onChangeSortBy(
                                         column.selector,
                                         sortBy &&
-                                          sortBy?.column != column.selector &&
-                                          sortBy?.direction == 'asc'
-                                          ? 'desc'
-                                          : 'asc'
+                                          sortBy?.column == column.selector &&
+                                          sortBy?.direction == 'desc'
+                                          ? 'asc'
+                                          : 'desc'
                                       );
                                     }
                                   }}
@@ -420,7 +444,7 @@ export function TableComponent({
                                         newFilter[
                                           column.selector as keyof object
                                         ] = e;
-                                        onChangeFilter?.(newFilter);
+                                        onChangeFilter?.({ ...newFilter });
                                       }}
                                       value={
                                         filter &&
@@ -434,7 +458,6 @@ export function TableComponent({
                           );
                         })}
                   </div>
-
                   {
                     // =========================>
                     // ## Body Column
@@ -445,16 +468,19 @@ export function TableComponent({
                       data.map((item: object, key) => {
                         return (
                           <div
+                            style={{
+                              animationDelay: `${(key + 1) * 0.05}s`,
+                            }}
                             className={`
-                              flex items-center gap-4 rounded-lg shadow-sm relative
-                              ${key % 2 ? 'bg-cyan-50' : 'bg-white'}
-                              ${onRowClick && 'cursor-pointer hover:bg-sky-100'}
+                              flex items-center gap-4 rounded-lg shadow-sm relative intro__table__column
+                              ${key % 2 ? 'bg-emerald-50' : 'bg-white'}
+                              ${
+                                onRowClick &&
+                                'cursor-pointer hover:bg-emerald-100'
+                              }
                               ${styles.table__row}
                             `}
                             key={key}
-                            onClick={() => {
-                              onRowClick?.(item, key);
-                            }}
                           >
                             <div className="w-8 px-4 py-2.5 font-medium">
                               {pagination && pagination?.page != 1
@@ -469,13 +495,16 @@ export function TableComponent({
                                 .filter((column) =>
                                   displayColumns.includes(column.selector)
                                 )
-                                .map((column, key) => {
+                                .map((column, columnKey) => {
                                   return (
                                     <div
-                                      key={key}
+                                      key={columnKey}
                                       className="px-4 py-2.5 font-medium"
                                       style={{
                                         width: column.width || '200px',
+                                      }}
+                                      onClick={() => {
+                                        onRowClick?.(item, key);
                                       }}
                                     >
                                       {item[column.selector as keyof object] ||
@@ -484,6 +513,7 @@ export function TableComponent({
                                   );
                                 })}
                             <div
+                              ref={actionColumnRef}
                               className={`flex-1 flex justify-end gap-2 px-4 py-2.5 ${styles.table__action}`}
                             >
                               {item['action' as keyof object]}
@@ -492,7 +522,7 @@ export function TableComponent({
                             {item['action' as keyof object] &&
                               floatingAction && (
                                 <div
-                                  className="sticky hover:-right-2 bg-base -right-5 z-30 cursor-pointer flex items-center shadow rounded-l-lg"
+                                  className="sticky hover:-right-2 bg-background -right-5 z-30 cursor-pointer flex items-center shadow rounded-l-lg"
                                   onClick={() =>
                                     floatingActionActive !== false &&
                                     floatingActionActive == key

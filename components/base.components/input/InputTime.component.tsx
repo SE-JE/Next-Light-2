@@ -31,6 +31,7 @@ export function InputTimeComponent({
   // max,
   withSecond,
   register,
+  autoFocus,
 }: inputTimeProps) {
   const [inputValue, setInputValue] = useState<string>('');
   const [isFocus, setIsFocus] = useState(false);
@@ -111,6 +112,7 @@ export function InputTimeComponent({
               setIsFocus(true);
             }}
             autoComplete="off"
+            autoFocus={autoFocus}
           />
 
           {leftIcon && (
@@ -292,7 +294,7 @@ export function InputNumberTimeComponent({
       </div>
       <input
         type="text"
-        className={`text-2xl bg-base font-semibold text-center w-full p-2 rounded-md`}
+        className={`text-2xl bg-background font-semibold text-center w-full p-2 rounded-md`}
         value={time}
         onChange={(e) => {
           if (/^[0-9\b]+$/.test(e.target.value) || e.target.value == '')

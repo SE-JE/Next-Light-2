@@ -32,6 +32,7 @@ export function InputDateComponent({
   max,
   defaultView,
   register,
+  customFocus,
 }: inputDateProps) {
   const [inputValue, setInputValue] = useState<Date | Date[] | ''>('');
   const [isFocus, setIsFocus] = useState(false);
@@ -45,6 +46,11 @@ export function InputDateComponent({
     },
     isFirst
   );
+  useEffect(() => {
+    if (customFocus) {
+      customFocus(isFocus);
+    }
+  }, [customFocus, isFocus]);
 
   useEffect(() => {
     register?.(name, validations);
@@ -200,14 +206,24 @@ export function InputDateComponent({
 
               <div
                 className={`
-                  absolute z-40 w-full min-w-[280px] max-w-[400px] p-5 mr-5 bg-white border-2 rounded-lg shadow-lg 
+                  absolute z-40 w-full min-w-[280px] max-w-[400px] p-5 mr-5 bg-white border-2 rounded-lg shadow-lg pb-20
                 `}
               >
                 <Calendar
-                  onChange={(e: any) => {
+                  onChange={(e: Date | Date[]) => {
                     setIsFirst(false);
                     setInputValue(e);
-                    onChange?.(e);
+                    onChange?.(
+                      e
+                        ? !range && !Array.isArray(e)
+                          ? moment(e).locale('id').format('YYYY-MM-DD')
+                          : Array.isArray(e)
+                          ? moment(e[0]).locale('id').format('YYYY-MM-DD') +
+                            '|' +
+                            moment(e[1]).locale('id').format('YYYY-MM-DD')
+                          : ''
+                        : ''
+                    );
                     setTimeout(() => setIsFocus(false), 100);
                     setIsInvalid('');
                   }}

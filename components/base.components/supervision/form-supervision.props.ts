@@ -11,6 +11,7 @@ import {
   inputTimeProps,
   selectProps,
 } from '../input';
+import { validationRules } from '../../../helpers';
 
 export type formProps = {
   construction?:
@@ -29,6 +30,7 @@ export type formProps = {
     | 'default'
     | 'select'
     | 'number'
+    | 'currency'
     | 'date'
     | 'time'
     | 'radio'
@@ -37,7 +39,25 @@ export type formProps = {
     | 'image'
     | 'map'
     | 'custom';
-  custom?: () => any;
+  custom?: ({
+    formControl,
+    values,
+  }: {
+    formControl: (name: string) => {
+      onChange?: (value: any) => void;
+      register?: (regName: string, reqValidation: validationRules) => void;
+      value?: any;
+      error?: string;
+    };
+    values?: { name: string; value?: any }[];
+    setValues?: (values: { name: string; value?: any }[]) => void;
+    errors?: { name: string; error?: any }[];
+    setErrors?: (values: { name: string; error?: any }[]) => void;
+    registers?: { name: string; validations?: validationRules | undefined }[];
+    setRegisters?: (
+      registers: { name: string; validations?: validationRules | undefined }[]
+    ) => void;
+  }) => any;
 };
 
 export type formSupervisionProps = {
@@ -45,7 +65,7 @@ export type formSupervisionProps = {
   forms: formProps[];
   submitControl: postProps;
   confirmation?: boolean;
-  defaultValue?: object;
+  defaultValue?: object | null;
   onSuccess?: () => void;
   customActionBar?: any;
 };
