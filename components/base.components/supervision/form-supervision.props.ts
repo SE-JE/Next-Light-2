@@ -67,5 +67,6 @@ export type formSupervisionProps = {
   confirmation?: boolean;
   defaultValue?: object | null;
   onSuccess?: () => void;
+  onError?: (code: number) => void;
   customActionBar?: any;
 };

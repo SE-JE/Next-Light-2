@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { post, postProps } from './api.helpers';
 import { validationHelper, validationRules } from './validation.helpers';
 
@@ -20,10 +20,16 @@ export const useForm = (
   const [loading, setLoading] = useState<boolean>(false);
   const [showConfirm, setShowConfirm] = useState<boolean>(false);
 
+  useEffect(() => {
+    setFormRegisters([]);
+    setFormValues([]);
+    setFormErrors([]);
+  }, [submitControl?.path]);
+
   const onChange = (name: string, value?: any) => {
     setFormValues([
       ...formValues.filter((val) => val.name != name),
-      { name, value: value || '' },
+      { name, value: value != undefined ? value : '' },
     ]);
   };
 
@@ -39,6 +45,10 @@ export const useForm = (
             { name: regName, validations: regValidations },
           ]);
         }
+      },
+      unregister: () => {
+        setFormValues([...formValues.filter((val) => val.name != name)]);
+        setFormRegisters([...formRegisters.filter((reg) => reg.name != name)]);
       },
     };
   };
@@ -56,6 +66,8 @@ export const useForm = (
       url: submitControl.url,
       path: submitControl.path,
       bearer: submitControl.bearer,
+      includeHeaders: submitControl.includeHeaders,
+      contentType: submitControl.contentType,
       body: formData,
     });
 
@@ -76,15 +88,18 @@ export const useForm = (
       });
 
       setFormErrors(errors);
+      onFailed?.(mutate?.status || 500);
       setLoading(false);
+      setShowConfirm(false);
     } else {
       onFailed?.(mutate?.status || 500);
+      setShowConfirm(false);
       setLoading(false);
     }
   };
 
   const submit = async (e: any) => {
-    e.preventDefault();
+    e?.preventDefault();
     setFormErrors([]);
 
     const newErrors: { name: string; error?: any }[] = [];
@@ -116,16 +131,16 @@ export const useForm = (
     fetch();
   };
 
-  const setValues = (values: object) => {
+  const setDefaultValues = (values: object) => {
     const newValues: { name: string; value?: any }[] = [];
 
     Object.keys(values).map((keyName: string) => {
-      if (formRegisters.find((form) => form.name == keyName)) {
-        newValues.push({
-          name: keyName,
-          value: values[keyName as keyof object],
-        });
-      }
+      // if (formRegisters.find((form) => form.name == keyName)) {
+      newValues.push({
+        name: keyName,
+        value: values[keyName as keyof object],
+      });
+      // }
     });
     setFormValues(newValues);
   };
@@ -133,7 +148,13 @@ export const useForm = (
   return [
     {
       formControl,
-      setValues,
+      values: formValues,
+      setValues: setFormValues,
+      errors: formErrors,
+      setErrors: setFormErrors,
+      setDefaultValues,
+      registers: formRegisters,
+      setRegisters: setFormRegisters,
       submit,
       loading,
       confirm: {

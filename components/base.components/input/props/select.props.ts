@@ -31,4 +31,7 @@ export type selectProps = {
   register?: (name: string, validations?: validationRules) => void;
   serverOptionControl?: getProps & { cacheName?: string };
   autoFocus?: boolean;
+  tempOptions?: [
+    { label: string; value: string | string[] | number | number[] }
+  ];
 };

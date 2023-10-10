@@ -168,6 +168,7 @@ export function SidebarComponent({
                             return (
                               <React.Fragment key={menu_key}>
                                 <a
+                                  href={menuPath}
                                   className={`
                                   flex items-center duration-150 justify-between gap-4 py-3 my-1 cursor-pointer rounded-lg mx-3 px-4 overflow-hidden
                                   ${
@@ -176,7 +177,8 @@ export function SidebarComponent({
                                       : 'text-slate-400 dark:text-slate-200 hover:text-primary hover:bg-background'
                                   }
                                 `}
-                                  onClick={() => {
+                                  onClick={(e) => {
+                                    e.preventDefault();
                                     if (!menuActive && !menu.items?.length) {
                                       router.push(menuPath);
                                       onChange?.();

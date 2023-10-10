@@ -4,6 +4,8 @@ import Cookies from 'js-cookie';
 import Router from 'next/router';
 import { token_cookie_name, loginPath, basePath } from './middleware.helpers';
 import fileDownload from 'js-file-download';
+import { Decrypt } from './encryption.helpers';
+import { standIn } from './standIn.helpers';
 
 // =========================>
 // ## type of filter params
@@ -39,7 +41,18 @@ export type getProps = {
 };
 
 // =========================>
-// ## get function
+// ## filter type value
+// =========================>
+export const getFilterTypeValue = {
+  equal: 'eq',
+  notEqual: 'ne',
+  in: 'in',
+  notIn: 'ni',
+  range: 'bw',
+};
+
+// =========================>
+// ## Get function
 // =========================>
 export const get = async ({
   path,
@@ -56,33 +69,52 @@ export const get = async ({
 
   if (!fetchHeaders.Authorization) {
     if (bearer) {
-      fetchHeaders.Authorization = `bearer ${bearer}`;
+      fetchHeaders.Authorization = `Bearer ${bearer}`;
     } else if (Cookies.get(token_cookie_name)) {
-      fetchHeaders.Authorization = `bearer ${Cookies.get(token_cookie_name)}`;
+      fetchHeaders.Authorization = `Bearer ${Decrypt(
+        Cookies.get(token_cookie_name)
+      )}`;
     }
   }
 
-  const fetch = await axios.get(fetchUrl, {
-    headers: fetchHeaders,
-    params: {
-      ...params,
-      ...includeParams,
-    },
-  });
+  const filter: Record<string, any> = {};
+  if (params?.filter) {
+    params?.filter?.map((val) => {
+      filter[val.column as keyof object] = `${
+        getFilterTypeValue[val.type as keyof object]
+      }:${Array.isArray(val.value) ? val.value.join(',') : val.value}`;
+    });
+  }
+
+  // await axios.get(process.env.NEXT_PUBLIC_CSRF_URL || '');
+  const fetch = await axios
+    .get(fetchUrl, {
+      headers: fetchHeaders,
+      params: {
+        ...params,
+        ...includeParams,
+        filter: params?.filter ? JSON.stringify(filter) : '',
+      },
+    })
+    .then((res) => res)
+    .catch((err) => err.response);
 
   if (fetch.status == 401) {
     Router.push(loginPath);
   } else if (fetch.status == 403) {
-    Router.push(basePath);
+    // Router.push(basePath);
   } else {
     return fetch;
   }
 };
 
 // =========================>
-// ## get hook function
+// ## Get hook function
 // =========================>
-export const useGet = (props: getProps) => {
+export const useGet = (
+  props: getProps & { cacheName?: string; expired?: number },
+  sleep?: boolean
+) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [refresh, setRefresh] = useState<boolean>(false);
   const [code, setCode] = useState<number | null>(null);
@@ -92,16 +124,34 @@ export const useGet = (props: getProps) => {
     setLoading(true);
 
     const fetch = async () => {
-      const response = await get(props);
+      const cacheData = props.expired
+        ? await standIn.get(props.cacheName || `fetch_${props?.path}`)
+        : null;
 
-      if (response?.status) {
+      if (cacheData) {
         setLoading(false);
-        setCode(response?.status);
-        setData(response?.data);
+        setCode(200);
+        setData(cacheData);
+      } else {
+        const response = await get(props);
+
+        if (response?.status) {
+          setLoading(false);
+          setCode(response?.status);
+          setData(response?.data);
+
+          if (props.expired) {
+            standIn.set({
+              key: props?.cacheName || `option_${props?.path}`,
+              data: response?.data,
+              expired: props.expired,
+            });
+          }
+        }
       }
     };
 
-    if (props.path || props.url) {
+    if (!sleep && (props.path || props.url)) {
       fetch();
     }
 
@@ -116,9 +166,10 @@ export const useGet = (props: getProps) => {
     props.params?.sortDirection,
     props.params?.filter,
     props.includeParams,
-    props.includeHeaders,
+    // props.includeHeaders,
     props.bearer,
     refresh,
+    sleep,
   ]);
 
   const reset = () => setRefresh(!refresh);
@@ -140,7 +191,7 @@ export type postProps = {
 };
 
 // =========================>
-// ## post function
+// ## Post function
 // =========================>
 export const post = async ({
   path,
@@ -158,9 +209,11 @@ export const post = async ({
 
   if (!fetchHeaders.Authorization) {
     if (bearer) {
-      fetchHeaders.Authorization = `bearer ${bearer}`;
+      fetchHeaders.Authorization = `Bearer ${bearer}`;
     } else if (Cookies.get(token_cookie_name)) {
-      fetchHeaders.Authorization = `bearer ${Cookies.get(token_cookie_name)}`;
+      fetchHeaders.Authorization = `Bearer ${Decrypt(
+        Cookies.get(token_cookie_name)
+      )}`;
     }
   }
 
@@ -170,7 +223,7 @@ export const post = async ({
       : 'application/json';
   }
 
-  await axios.get(process.env.NEXT_PUBLIC_CSRF_URL || '');
+  // await axios.get(process.env.NEXT_PUBLIC_CSRF_URL || '');
   const fetch = await axios
     .post(fetchUrl, body, {
       headers: fetchHeaders,
@@ -184,7 +237,7 @@ export const post = async ({
   if (fetch.status == 401) {
     Router.push(loginPath);
   } else if (fetch.status == 403) {
-    Router.push(basePath);
+    // Router.push(basePath);
   } else {
     return fetch;
   }
@@ -204,7 +257,7 @@ export type patchProps = {
 };
 
 // =========================>
-// ## patch function
+// ## Patch function
 // =========================>
 export const patch = async ({
   path,
@@ -222,9 +275,11 @@ export const patch = async ({
 
   if (!fetchHeaders.Authorization) {
     if (bearer) {
-      fetchHeaders.Authorization = `bearer ${bearer}`;
+      fetchHeaders.Authorization = `Bearer ${bearer}`;
     } else if (Cookies.get(token_cookie_name)) {
-      fetchHeaders.Authorization = `bearer ${Cookies.get(token_cookie_name)}`;
+      fetchHeaders.Authorization = `Bearer ${Decrypt(
+        Cookies.get(token_cookie_name)
+      )}`;
     }
   }
 
@@ -234,7 +289,7 @@ export const patch = async ({
       : 'application/json';
   }
 
-  await axios.get(process.env.NEXT_PUBLIC_CSRF_URL || '');
+  // await axios.get(process.env.NEXT_PUBLIC_CSRF_URL || '');
   const fetch = await axios.patch(fetchUrl, body, {
     headers: fetchHeaders,
     params: {
@@ -263,7 +318,7 @@ export type destroyProps = {
 };
 
 // =========================>
-// ## destroy function
+// ## Destroy function
 // =========================>
 export const destroy = async ({
   path,
@@ -279,9 +334,11 @@ export const destroy = async ({
 
   if (!fetchHeaders.Authorization) {
     if (bearer) {
-      fetchHeaders.Authorization = `bearer ${bearer}`;
+      fetchHeaders.Authorization = `Bearer ${bearer}`;
     } else if (Cookies.get(token_cookie_name)) {
-      fetchHeaders.Authorization = `bearer ${Cookies.get(token_cookie_name)}`;
+      fetchHeaders.Authorization = `Bearer ${Decrypt(
+        Cookies.get(token_cookie_name)
+      )}`;
     }
   }
 
@@ -302,41 +359,6 @@ export const destroy = async ({
 };
 
 // =========================>
-// ## destroy hook function
-// =========================>
-export const useDestroy = (props: destroyProps) => {
-  const [loading, setLoading] = useState<boolean>(true);
-  const [code, setCode] = useState<number | null>(null);
-  const [data, setData] = useState<any | null>(null);
-
-  useEffect(() => {
-    setLoading(true);
-
-    const fetch = async () => {
-      const response = await destroy(props);
-
-      if (response?.status) {
-        setCode(response?.status);
-        setData(response?.data);
-      }
-    };
-
-    if (props.path || props.url) {
-      fetch();
-    }
-  }, [
-    props,
-    props.path,
-    props.url,
-    props.params,
-    props.includeHeaders,
-    props.bearer,
-  ]);
-
-  return [loading, code, data];
-};
-
-// =========================>
 // ## type of download props
 // =========================>
 export type downloadProps = {
@@ -350,7 +372,7 @@ export type downloadProps = {
 };
 
 // =========================>
-// ## download function
+// ## Download function
 // =========================>
 export const download = async ({
   path,
@@ -368,9 +390,11 @@ export const download = async ({
 
   if (!fetchHeaders.Authorization) {
     if (bearer) {
-      fetchHeaders.Authorization = `bearer ${bearer}`;
+      fetchHeaders.Authorization = `Bearer ${bearer}`;
     } else if (Cookies.get(token_cookie_name)) {
-      fetchHeaders.Authorization = `bearer ${Cookies.get(token_cookie_name)}`;
+      fetchHeaders.Authorization = `Bearer ${Decrypt(
+        Cookies.get(token_cookie_name)
+      )}`;
     }
   }
 

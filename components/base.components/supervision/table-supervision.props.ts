@@ -10,6 +10,7 @@ export type tableSupervisionColumnProps = {
   sortable?: boolean;
   filter?: filterColumnProps;
   item?: any;
+  permissionCode?: string;
 };
 
 export type tableSupervisionColumnGroupProps = {
@@ -64,4 +65,5 @@ export type tableSupervisionProps = {
   unUrlPage?: boolean;
   noControlBar?: boolean;
   permissionCode?: number;
+  searchable?: boolean;
 };

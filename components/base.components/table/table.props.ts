@@ -28,4 +28,5 @@ export type tableProps = {
   onRefresh?: () => void;
   headBar?: any;
   noControlBar?: boolean;
+  searchable?: boolean;
 };

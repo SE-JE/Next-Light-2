@@ -44,9 +44,10 @@ export function TableComponent({
   onRefresh,
   headBar,
   noControlBar,
+  searchable,
 }: tableProps) {
   const [displayColumns, setDisplayColumns] = useState<string[]>([]);
-  const [floatingAction, setFloatingAction] = useState(false);
+  const [floatingAction, setFloatingAction] = useState(true);
   const [floatingActionActive, setFloatingActionActive] = useState<
     false | number
   >(false);
@@ -63,6 +64,8 @@ export function TableComponent({
 
   useEffect(() => {
     setKeyword(search || '');
+    pagination?.onChange?.(pagination.totalRow, pagination.paginate, 1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
   useEffect(() => {
@@ -104,7 +107,7 @@ export function TableComponent({
             // ## Input Paginate
             // =========================>
           }
-          <div className="relative z-40">
+          <div className="relative z-20">
             {pagination && (
               <>
                 <div className="bg-white p-1.5 rounded-md w-24">
@@ -144,7 +147,7 @@ export function TableComponent({
           </div>
 
           {!excludeSearch && (
-            <div className="w-3/4 lg:w-1/2 flex gap-2 justify-end">
+            <div className="w-3/4 lg:w-2/3 flex gap-2 justify-end">
               {
                 // =========================>
                 // ## Display column
@@ -200,52 +203,54 @@ export function TableComponent({
                 </OutsideClickHandler>
               </div>
               {headBar && <div>{headBar}</div>}
-              <div className="bg-white p-1.5 rounded-md flex gap-1.5 w-[350px]">
-                {
-                  // =========================>
-                  // ## Search column
-                  // =========================>
-                }
-                {searchableColumn && searchableColumn?.length > 0 && (
-                  <div className="w-36">
-                    <SelectComponent
-                      name="searchableColumn"
-                      options={[
-                        { label: 'Semua', value: 'all' },
-                        ...columns
-                          .filter((column) =>
-                            searchableColumn.includes(column.selector)
-                          )
-                          .map((column) => {
-                            return {
-                              label: column.label,
-                              value: column.selector,
-                            };
-                          }),
-                      ]}
+              {(searchable == undefined || searchable == true) && (
+                <div className="bg-white p-1.5 rounded-md flex gap-1.5 w-[350px]">
+                  {
+                    // =========================>
+                    // ## Search column
+                    // =========================>
+                  }
+                  {searchableColumn && searchableColumn?.length > 0 && (
+                    <div className="w-36">
+                      <SelectComponent
+                        name="searchableColumn"
+                        options={[
+                          { label: 'Semua', value: 'all' },
+                          ...columns
+                            .filter((column) =>
+                              searchableColumn.includes(column.selector)
+                            )
+                            .map((column) => {
+                              return {
+                                label: column.label,
+                                value: column.selector,
+                              };
+                            }),
+                        ]}
+                        size="sm"
+                        value={searchColumn || 'all'}
+                        onChange={(e) => onChangeSearchColumn?.(String(e))}
+                      />
+                    </div>
+                  )}
+
+                  {
+                    // =========================>
+                    // ## Input search
+                    // =========================>
+                  }
+                  <div className="w-full min-w-[150px]">
+                    <InputComponent
+                      name="search"
                       size="sm"
-                      value={searchColumn || 'all'}
-                      onChange={(e) => onChangeSearchColumn?.(String(e))}
+                      placeholder="Cari disini..."
+                      rightIcon={faMagnifyingGlass}
+                      value={keyword}
+                      onChange={(e) => setKeyword(e)}
                     />
                   </div>
-                )}
-
-                {
-                  // =========================>
-                  // ## Input search
-                  // =========================>
-                }
-                <div className="w-full">
-                  <InputComponent
-                    name="search"
-                    size="sm"
-                    placeholder="Cari disini..."
-                    rightIcon={faMagnifyingGlass}
-                    value={keyword}
-                    onChange={(e) => setKeyword(e)}
-                  />
                 </div>
-              </div>
+              )}
               <div className="bg-white p-1.5 rounded-md relative">
                 <IconButtonComponent
                   icon={faRefresh}

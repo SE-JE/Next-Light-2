@@ -40,6 +40,7 @@ export function FormSupervisionComponent({
   confirmation,
   defaultValue,
   onSuccess,
+  onError,
   customActionBar,
 }: formSupervisionProps) {
   const [modalFailed, setModalFailed] = useState<boolean>(false);
@@ -56,6 +57,8 @@ export function FormSupervisionComponent({
   };
 
   const onFailed = (code: number) => {
+    onError?.(code);
+
     if (code == 422) {
       confirm.onClose();
     } else {

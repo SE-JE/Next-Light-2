@@ -42,6 +42,7 @@ export function SelectComponent({
   searchServer,
   serverOptionControl,
   autoFocus,
+  tempOptions,
 }: selectProps) {
   const [inputShowValue, setInputShowValue] = useState('');
   const [inputValue, setInputValue] = useState<
@@ -60,7 +61,9 @@ export function SelectComponent({
   const [activeOption, setActiveOption] = useState(0);
   const [showOption, setShowOption] = useState(false);
 
-  const [search, setSearch] = useState('');
+  const [useTemp, setUseTemp] = useState(true);
+
+  // const [search, setSearch] = useState('');
   const [keyword, setKeyword] = useState('');
   const [keywordSearch] = useLazySearch(keyword);
 
@@ -70,6 +73,13 @@ export function SelectComponent({
 
   //   console.log(data);
   // }
+
+  useEffect(() => {
+    tempOptions && tempOptions.length && searchServer
+      ? setDataOptions(tempOptions)
+      : setUseTemp(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tempOptions, options]);
 
   useEffect(() => {
     const fetchOptions = async () => {
@@ -84,6 +94,7 @@ export function SelectComponent({
       } else {
         const mutateOptions = await get(serverOptionControl || {});
         setDataOptions(mutateOptions?.data);
+        setShowOption(true);
         standIn.set({
           key:
             serverOptionControl?.cacheName ||
@@ -114,23 +125,31 @@ export function SelectComponent({
       let serverControl = {
         ...serverOptionControl,
         params: {
-          search: search,
+          search: keywordSearch,
         },
       };
-      setLoadingOption(true);
+      setShowOption(false);
+      // setLoadingOption(true);
       const mutateOptions = await get(serverControl || {});
       if (mutateOptions.status == '200') {
         setIsInvalid('');
       }
-      let newOptions = mutateOptions?.data?.data.map((item: any) => {
-        return { value: item.id, label: item.name };
+      let newOptions = mutateOptions?.data?.map((item: any) => {
+        return item;
       });
       if (newOptions.length > 0) {
         setDataOptions(newOptions);
+        setShowOption(true);
+        setFilteredOptions(newOptions);
+      } else {
+        // setDataOptions([]);
+        // setShowOption(false);
+        // setFilteredOptions([]);
       }
 
-      setLoadingOption(false);
+      // setLoadingOption(false);
     };
+
     if (searchServer) {
       if (serverOptionControl?.path || serverOptionControl?.url) {
         fetchOptions();
@@ -140,16 +159,16 @@ export function SelectComponent({
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, serverOptionControl?.path, serverOptionControl?.url]);
-  useEffect(() => {
-    if (keywordSearch) {
-      setSearch?.(keywordSearch);
-    } else {
-      setSearch?.('');
-    }
+  }, [keywordSearch, serverOptionControl?.path, serverOptionControl?.url]);
+  // useEffect(() => {
+  //   if (keywordSearch) {
+  //     setSearch?.(keywordSearch);
+  //   } else {
+  //     setSearch?.('');
+  //   }
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keywordSearch]);
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [keywordSearch]);
 
   useEffect(() => {
     register?.(name, validations);
@@ -176,9 +195,10 @@ export function SelectComponent({
   useEffect(() => {
     if (value) {
       setInputValue(value);
-      setInputShowValue(
-        dataOptions?.find((option) => option.value == value)?.label || ''
-      );
+      Array.isArray(dataOptions) &&
+        setInputShowValue(
+          dataOptions?.find((option) => option.value == value)?.label || ''
+        );
       setIsFirst(false);
     } else {
       setInputValue('');
@@ -201,13 +221,13 @@ export function SelectComponent({
     if (dataOptions?.length) {
       let newFilteredOptions: selectOptionProps[] = [];
 
-      if (searchable) {
+      if (searchable && !searchServer) {
         if (e.target.value) {
           newFilteredOptions = dataOptions
             .filter(
               (Option) =>
                 Option.label
-                  .toLowerCase()
+                  ?.toLowerCase()
                   .indexOf(e.target.value.toLowerCase()) > -1
             )
             .slice(0, 10);
@@ -234,11 +254,14 @@ export function SelectComponent({
         if (!multiple) {
           setInputShowValue(resultValue?.label || inputShowValue);
           setInputValue(resultValue?.value || inputShowValue);
+          searchServer && setKeyword(resultValue?.label || keyword);
         } else {
           if (resultValue?.value) {
             searchable
               ? setInputShowValue(resultValue.label)
               : searchable && setInputShowValue('');
+
+            searchServer && setKeyword(resultValue.label);
 
             const values: string[] = Array.isArray(inputValue)
               ? Array()
@@ -328,15 +351,26 @@ export function SelectComponent({
                 : ''
             }
             id={`select_${name}`}
-            disabled={loadingOption || !dataOptions?.length || disabled}
-            value={inputShowValue}
+            disabled={
+              disabled ||
+              (!autoFocus && (loadingOption || !dataOptions?.length))
+            }
+            value={
+              useTemp && tempOptions
+                ? tempOptions.at(0)?.label
+                : searchServer
+                ? keyword
+                : inputShowValue
+            }
             onFocus={(e) => {
+              setUseTemp(false);
               setIsFocus(true);
               onFocus?.();
               dataOptions?.length && filterOption(e);
               searchable && e.target.select();
             }}
             onBlur={(e) => {
+              setUseTemp(false);
               const value = e.target.value;
               const valueOption = dataOptions?.find(
                 (option) => option.label?.toLowerCase() == value?.toLowerCase()
@@ -348,15 +382,18 @@ export function SelectComponent({
                     if (valueOption?.value) {
                       setInputShowValue(valueOption.label);
                       setInputValue(valueOption.value);
+                      searchServer && setKeyword(valueOption.label);
                       onChange?.(valueOption.value, valueOption);
                     } else {
                       setInputShowValue('');
+                      searchServer && setKeyword('');
                       setInputValue('');
                       onChange?.('');
                     }
                   }, 140);
                 } else {
                   setInputShowValue('');
+                  searchServer && setKeyword('');
                   onChange?.('');
                 }
               }
@@ -367,6 +404,7 @@ export function SelectComponent({
               onBlur?.();
             }}
             onChange={(e) => {
+              setUseTemp(false);
               searchable && setInputShowValue(e.target.value);
               searchServer && setKeyword(e.target.value);
               setIsFirst(false);
@@ -434,6 +472,7 @@ export function SelectComponent({
                                 !values.filter((_, val) => val != index)?.length
                               ) {
                                 setInputShowValue('');
+                                searchServer && setKeyword('');
                                 onChange?.('');
                               }
                             }}
@@ -530,6 +569,7 @@ export function SelectComponent({
                       setShowOption(false);
                       if (!multiple) {
                         setInputShowValue(option.label);
+                        searchServer && setKeyword(option.label);
                         setInputValue(option.value);
                         onChange?.(option.value, option);
                       } else {
@@ -541,6 +581,7 @@ export function SelectComponent({
                               .filter((val) => val != option.value)
                           : [];
                         setInputShowValue('');
+                        searchServer && setKeyword('');
                         if (
                           Array.isArray(inputValue) &&
                           Array()

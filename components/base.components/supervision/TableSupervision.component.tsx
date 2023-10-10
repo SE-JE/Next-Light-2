@@ -29,6 +29,7 @@ export function TableSupervisionComponent({
   permissionCode,
   customTopBarWithForm,
   refreshOnClose,
+  searchable,
 }: tableSupervisionProps) {
   const router = useRouter();
   const {
@@ -80,7 +81,8 @@ export function TableSupervisionComponent({
         filter: mutatefilter.length ? mutatefilter : undefined,
       },
     },
-    setToLoading
+    setToLoading ||
+      (includeFilters && mutatefilter.length < includeFilters?.length)
   );
 
   const hasPermissions = useMemo(() => {
@@ -419,15 +421,21 @@ export function TableSupervisionComponent({
           columns={
             !columnControl?.custom
               ? columns
-              : columnControl?.custom.map((column) => {
-                  return {
-                    label: column.label || '',
-                    selector: column.selector,
-                    width: column.width ? column.width : '200px',
-                    sortable: column.sortable,
-                    filter: column.filter,
-                  };
-                })
+              : columnControl?.custom
+                  .filter(
+                    (column) =>
+                      !column.permissionCode ||
+                      data?.allowed_privileges?.includes(column.permissionCode)
+                  )
+                  .map((column) => {
+                    return {
+                      label: column.label || '',
+                      selector: column.selector,
+                      width: column.width ? column.width : '200px',
+                      sortable: column.sortable,
+                      filter: column.filter,
+                    };
+                  })
           }
           data={dataTable}
           sortBy={sort}
@@ -458,6 +466,7 @@ export function TableSupervisionComponent({
                   setModalView(true);
                 }
           }
+          searchable={searchable}
         />
       ) : (
         <div className="flex flex-col items-center justify-center gap-8 p-5">
@@ -576,7 +585,7 @@ export function TableSupervisionComponent({
       />
 
       <FloatingPageComponent
-        title={'Detail ' + title}
+        title={'Detail ' + (typeof title == 'string' ? title : '')}
         show={modalView}
         onClose={() => {
           setModalView(false);
